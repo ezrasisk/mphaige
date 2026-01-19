@@ -89,3 +89,46 @@ pub fn sheaf_attention(sheaf: &Sheaf, x: &Tensor) -> Tensor {
     // Eclectic: Softmax on restriction norms for dynamic weighting
     x.clone()  // Expand later
 }
+
+//more stuff
+pub fn sheaf_attention(sheaf: &Sheaf, x: &Tensor, g: &DiGraph<(), ()>) -> Tensor {
+    let mut attn_scores = Tensor::zeros(&[g.edge_count() as i64, 1], (tch::Kind::Float, tch::Device::Cpu));
+    let mut idx = 0;
+    for edge in g.edge_indices() {
+        let (u_node, v_node) = g.edge_endpoints(edge).unwrap();
+        let u = u_node.index();
+        let v = v_node.index();
+        let phi = sheaf.restrictions[&(u, v)].shallow_clone();
+        let xu = x.slice(0, sheaf.offsets[&u] as i64, (sheaf.offsets[&u] + sheaf.dims[&u]) as i64, 1);
+        let xv = x.slice(0, sheaf.offsets[&v] as i64, (sheaf.offsets[&v] + sheaf.dims[&v]) as i64, 1);
+        let score = xu.matmul(&phi).dot(&xv);  // Simple dot-product attention
+        attn_scores[idx] = score;
+        idx += 1;
+    }
+    let attn_weights = attn_scores.softmax(0, tch::Kind::Float);
+    // Apply weights to restrictions (eclectic: multiply phi by weight)
+    let mut weighted_x = x.clone();
+    idx = 0;
+    for edge in g.edge_indices() {
+        let (u_node, v_node) = g.edge_endpoints(edge).unwrap();
+        let u = u_node.index();
+        let v = v_node.index();
+        let weight = attn_weights[idx].unsqueeze(0).unsqueeze(0);
+        let phi_weighted = sheaf.restrictions[&(u, v)].mul(&weight);
+        let contribution = phi_weighted.matmul(&weighted_x.slice(0, sheaf.offsets[&v] as i64, (sheaf.offsets[&v] + sheaf.dims[&v]) as i64, 1));
+        weighted_x.slice(0, sheaf.offsets[&u] as i64, (sheaf.offsets[&u] + sheaf.dims[&u]) as i64, 1).add_(&contribution);
+        idx += 1;
+    }
+    weighted_x
+}
+
+pub fn spectral_gap(delta: &Tensor) -> f64 {
+    let eigenvalues = delta.symeig(false).1;  // Eigenvalues (ascending)
+    eigenvalues[1].f64_value(&[]) - eigenvalues[0].f64_value(&[])  // Gap = λ2 - λ1 (λ1≈0)
+}
+
+pub fn cohomology_dim_approx(delta: &Tensor, eps: f64) -> f64 {
+    // H^1 dim approx via rank of (Delta + eps I)^-1 trace
+    let reg_delta = delta + eps * Tensor::eye(delta.size()[0], (tch::Kind::Float, tch::Device::Cpu));
+    reg_delta.inverse().unwrap().trace().f64_value(&[])
+}
