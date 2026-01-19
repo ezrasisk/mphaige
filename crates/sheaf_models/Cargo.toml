@@ -1,0 +1,9 @@
+[package]
+name = "sheaf_models"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+sheaf_utils = { path = "../sheaf_utils" }   # local path dependency
+tch.workspace = true
+nalgebra.workspace = true
