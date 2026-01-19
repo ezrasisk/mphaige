@@ -1,0 +1,15 @@
+[workspace]
+members = [
+    "crates/sheaf_utils",
+    "crates/sheaf_models",
+    "crates/sheaf_trainer"
+]
+
+[workspace.dependencies]
+nalgebra = "0.32"
+petgraph = "0.6"
+rand = "0.8"
+tch = "0.15"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+clap = { version = "4.5", features = ["derive"] }
