@@ -84,13 +84,7 @@ impl Sheaf {
     }
 }
 
-// Other utils: Sheaf attention, spectral gap, etc. (stub for now)
-pub fn sheaf_attention(sheaf: &Sheaf, x: &Tensor) -> Tensor {
-    // Eclectic: Softmax on restriction norms for dynamic weighting
-    x.clone()  // Expand later
-}
-
-//more stuff
+// Other utils
 pub fn sheaf_attention(sheaf: &Sheaf, x: &Tensor, g: &DiGraph<(), ()>) -> Tensor {
     let mut attn_scores = Tensor::zeros(&[g.edge_count() as i64, 1], (tch::Kind::Float, tch::Device::Cpu));
     let mut idx = 0;
