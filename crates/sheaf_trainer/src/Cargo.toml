@@ -1,0 +1,15 @@
+[package]
+name = "sheaf_trainer"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "sheaf_trainer"
+path = "src/main.rs"
+
+[dependencies]
+sheaf_models = { path = "../sheaf_models" }
+sheaf_utils = { path = "../sheaf_utils" }
+clap.workspace = true
+serde_json.workspace = true
+tch.workspace = true
